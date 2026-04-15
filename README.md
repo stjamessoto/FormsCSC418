@@ -1,99 +1,247 @@
-# Signup App — CS418 Assignment
+# Signup App — CS418
 
-Controlled form with real-time validation, DynamoDB persistence, and Docker containerization.
+A full-stack signup form with real-time validation, DynamoDB persistence, and Docker.
 
-## Project Structure
+---
+
+## Prerequisites
+
+Before you start, make sure you have these installed:
+
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (must be running)
+- [Git](https://git-scm.com/)
+- A code editor like [VS Code](https://code.visualstudio.com/)
+
+---
+
+## Step 1 — Clone the Repository
+
+Open your terminal and run:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+```
+
+Then navigate into the project folder:
+
+```bash
+cd YOUR_REPO_NAME
+```
+
+---
+
+## Step 2 — Open in VS Code
+
+```bash
+code .
+```
+
+Your project structure should look like this:
 
 ```
-signup-app/
-├── backend/                 ← Express API (mirrors Hangman's backend/)
-│   ├── server.js            ← Main server (all routes in one file like Hangman)
-│   ├── server.test.js       ← Unit tests (requirement #6)
+your-project/
+├── backend/
+│   ├── server.js
+│   ├── server.test.js
 │   ├── package.json
 │   └── Dockerfile
-├── src/                     ← Vite React frontend (mirrors Hangman's src/)
+├── src/
 │   ├── api/
-│   │   └── api.jsx          ← API service layer
+│   │   └── api.jsx
 │   ├── components/
-│   │   ├── SignupForm.jsx   ← Controlled form + validation (req #1, #2, #3)
-│   │   └── SignupList.jsx   ← List + category filter (req #5)
-│   ├── App.jsx              ← useEffect fetch + _saveStatus (req #4)
+│   │   ├── SignupForm.jsx
+│   │   └── SignupList.jsx
+│   ├── App.jsx
 │   ├── index.css
 │   └── main.jsx
-├── docker-compose.yml       ← 4 containers: dynamo, dynamo-admin, backend, ui
-├── Dockerfile               ← UI container (nginx)
+├── docker-compose.yml
+├── Dockerfile
 ├── nginx.conf
 ├── index.html
 ├── vite.config.js
 └── package.json
 ```
 
-## Running with Docker
+---
+
+## Step 3 — Install Backend Dependencies
+
+In the VS Code terminal, navigate into the backend folder and install:
+
+```bash
+cd backend
+npm install
+```
+
+Then go back to the project root:
+
+```bash
+cd ..
+```
+
+---
+
+## Step 4 — Install Frontend Dependencies
+
+From the project root, install the frontend packages:
+
+```bash
+npm install
+```
+
+---
+
+## Step 5 — Make Sure Docker Desktop is Running
+
+Open Docker Desktop and wait until it says **"Engine running"** in the bottom left corner before moving on.
+
+---
+
+## Step 6 — Build and Start All Containers
+
+From the project root, run:
 
 ```bash
 docker-compose up --build
 ```
 
-| Service       | URL                        |
-|---------------|----------------------------|
-| UI            | http://localhost:5173       |
-| API           | http://localhost:3001       |
-| DynamoDB      | http://localhost:8000       |
-| Dynamo Admin  | http://localhost:8001       |
+This will spin up 4 containers:
 
-## Local Development (without Docker)
+| Container | What it does |
+|---|---|
+| `signup_dynamo` | Local DynamoDB database |
+| `signup_dynamo_admin` | Visual database browser |
+| `signup_backend` | Express API server |
+| `signup_ui` | React frontend served by nginx |
 
-**Terminal 1 — DynamoDB Local:**
-```bash
-docker-compose up dynamo dynamo-admin
+> **First run will take a few minutes** — Docker needs to download the base images.
+
+---
+
+## Step 7 — Confirm Everything is Running
+
+Watch the terminal output. You should see:
+
+```
+signup_backend  | Table "Signups" already exists.
+signup_backend  | 🚀 Signup API running on http://localhost:3001
 ```
 
-**Terminal 2 — Backend:**
+Once you see that, everything is up.
+
+---
+
+## Step 8 — Open the App
+
+Open your browser and go to:
+
+| What | URL |
+|---|---|
+| The App | http://localhost:5173 |
+| DynamoDB Admin | http://localhost:8001 |
+| API (raw) | http://localhost:3001/api/signups |
+
+---
+
+## Step 9 — Run the Unit Tests
+
+Open a **second terminal** in VS Code (click the `+` button in the terminal panel), then run:
+
 ```bash
 cd backend
-npm install
-npm run dev
-```
-
-**Terminal 3 — Frontend:**
-```bash
-npm install
-npm run dev
-# Open http://localhost:5173
-```
-
-## Running Tests
-
-```bash
-cd backend
-npm install
 npm test
 ```
 
-## Requirements Met
+You should see all 19 tests pass:
 
-| # | Requirement | Implementation |
-|---|---|---|
-| 1 | Controlled form with `fields` state object | `SignupForm.jsx` — `useState(INITIAL_FIELDS)` with name, email, phone, category |
-| 2 | Real-time `fieldErrors` validation in red | `validateField()` called on every `onChange` + `onBlur`, errors shown in `.error-msg` |
-| 3 | Submit disabled until form valid | `validate()` function gates the button; `disabled={!isFormValid}` |
-| 4 | `useEffect` fetch on mount + `_saveStatus` | `App.jsx` useEffect + `SAVE_STATUS` (READY/SAVING/SUCCESS/ERROR); 5s POST delay |
-| 5 | Filter by Category using GSI | `GET /api/signups/category/:category` queries `CategoryIndex` GSI; dropdown in `SignupList` |
-| 6 | Unit tests for API | `backend/server.test.js` — 16 tests covering all routes with DynamoDB mocked |
+```
+PASS  server.test.js
 
-## 5 Categories
+  GET /api/signups
+    ✓ 200 — returns all signups sorted newest first
+    ✓ 200 — returns empty array when table is empty
+    ✓ 500 — returns error when DynamoDB scan fails
 
-- Colors
-- NFL Teams  
-- College Teams
-- Pizza Toppings
-- Video Game Genres
+  GET /api/signups/category/:category
+    ✓ 200 — returns items matching category via GSI
+    ✓ 200 — returns empty array when no items in category
+    ✓ 500 — returns error on DynamoDB query failure
 
-## DynamoDB GSI
+  GET /api/signups/:id
+    ✓ 200 — returns signup when found
+    ✓ 404 — returns not found when item does not exist
+    ✓ 500 — returns error on DynamoDB failure
 
-The `Signups` table has a **Global Secondary Index** named `CategoryIndex`:
-- **Partition key**: `category` (String)
-- **Sort key**: `createdAt` (String, ISO format — sorts newest first with `ScanIndexForward: false`)
-- **Projection**: ALL
+  POST /api/signups
+    ✓ 201 — creates and returns new signup
+    ✓ 400 — rejects when name is missing
+    ✓ 400 — rejects when email is missing
+    ✓ 400 — rejects when phone is missing
+    ✓ 400 — rejects when category is missing
+    ✓ 400 — rejects empty body
+    ✓ 500 — returns error when DynamoDB put fails
 
-This enables efficient category filtering without a full table scan.
+  DELETE /api/signups/:id
+    ✓ 200 — returns success message on delete
+    ✓ 500 — returns error when DynamoDB delete fails
+
+  GET /health
+    ✓ 200 — returns ok status
+
+Tests: 19 passed, 19 total
+```
+
+---
+
+## Stopping the App
+
+When you're done, go back to the first terminal and press `Ctrl + C`, then run:
+
+```bash
+docker-compose down
+```
+
+To also wipe the database and start completely fresh next time:
+
+```bash
+docker-compose down -v
+```
+
+---
+
+## Useful Commands
+
+```bash
+# Start everything (after first build)
+docker-compose up
+
+# Rebuild after making code changes
+docker-compose up --build
+
+# View logs from all containers
+docker-compose logs -f
+
+# View logs from just the backend
+docker-compose logs -f backend
+
+# View logs from just the UI
+docker-compose logs -f ui
+```
+
+---
+
+## How the App Works
+
+**Filling out the form:**
+- All 6 fields are required — the Submit button stays disabled until every field is valid
+- Errors appear in red in real time as you type
+- Submitting triggers a 5-second save (intentional delay to show the loading state)
+- The form only clears after a successful save
+
+**Filtering the list:**
+- Use the "Filter by Category" dropdown to filter entries
+- Filtered results are fetched directly from DynamoDB using a Global Secondary Index (GSI)
+
+**Viewing the database:**
+- Go to http://localhost:8001 to browse the Signups table and see all records

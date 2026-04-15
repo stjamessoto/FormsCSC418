@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  dynamo:
+    image: amazon/dynamodb-local:latest
+    container_name: signup_dynamo
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+    networks:
+      - signup-net
+
+  dynamo-admin:
+    image: aaronshaf/dynamodb-admin:latest
+    container_name: signup_dynamo_admin
+    ports:
+      - "8001:8001"
+    environment:
+      DYNAMO_ENDPOINT: http://dynamo:8000
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+    depends_on:
+      - dynamo
+    networks:
+      - signup-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: signup_backend
+    ports:
+      - "3001:3001"
+    environment:
+      DYNAMO_ENDPOINT: http://dynamo:8000
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      PORT: 3001
+      POST_DELAY_MS: 5000
+    depends_on:
+      - dynamo
+    networks:
+      - signup-net
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: signup_ui
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - signup-net
+
+networks:
+  signup-net:
+    driver: bridge

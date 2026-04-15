@@ -138,9 +138,9 @@ app.get("/api/signups/:id", async (req, res) => {
 
 // POST /api/signups — create signup with 5-sec delay (requirement #4)
 app.post("/api/signups", async (req, res) => {
-  const { name, email, phone, category } = req.body;
+  const { name, email, phone, category, sportsTeam, favoriteSport } = req.body;
 
-  if (!name || !email || !phone || !category) {
+  if (!name || !email || !phone || !category || !sportsTeam || !favoriteSport) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
@@ -157,6 +157,8 @@ app.post("/api/signups", async (req, res) => {
     email,
     phone,
     category,
+    sportsTeam,
+    favoriteSport,
     createdAt: new Date().toISOString(),
   };
 

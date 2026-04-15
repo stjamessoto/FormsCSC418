@@ -15,6 +15,8 @@ const INITIAL_FIELDS = {
   email: "",
   phone: "",
   category: "",
+  sportsTeam: "",
+  favoriteSport: "",
 };
 
 const INITIAL_ERRORS = {
@@ -22,6 +24,8 @@ const INITIAL_ERRORS = {
   email: "",
   phone: "",
   category: "",
+  sportsTeam: "",
+  favoriteSport: "",
 };
 
 // Save status enum (requirement #4)
@@ -50,6 +54,14 @@ function validateField(name, value) {
       return "";
     case "category":
       if (!value) return "Please select a category";
+      return "";
+    case "sportsTeam":
+      if (!value.trim()) return "Favorite sports team is required";
+      if (value.trim().length < 2) return "Please enter a valid team name";
+      return "";
+    case "favoriteSport":
+      if (!value.trim()) return "Favorite sport is required";
+      if (value.trim().length < 2) return "Please enter a valid sport";
       return "";
     default:
       return "";
@@ -203,6 +215,44 @@ export default function SignupForm({ onSubmit, saveStatus }) {
         </select>
         {fieldErrors.category && touched.category && (
           <span className="error-msg">{fieldErrors.category}</span>
+        )}
+      </div>
+
+      {/* FAVORITE SPORTS TEAM */}
+      <div className="field-group">
+        <label htmlFor="sportsTeam">Favorite Sports Team</label>
+        <input
+          id="sportsTeam"
+          name="sportsTeam"
+          type="text"
+          value={fields.sportsTeam}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="e.g. Atlanta Braves"
+          className={fieldErrors.sportsTeam && touched.sportsTeam ? "input-error" : ""}
+          disabled={isSaving}
+        />
+        {fieldErrors.sportsTeam && touched.sportsTeam && (
+          <span className="error-msg">{fieldErrors.sportsTeam}</span>
+        )}
+      </div>
+
+      {/* FAVORITE SPORT */}
+      <div className="field-group">
+        <label htmlFor="favoriteSport">Favorite Sport</label>
+        <input
+          id="favoriteSport"
+          name="favoriteSport"
+          type="text"
+          value={fields.favoriteSport}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="e.g. Basketball"
+          className={fieldErrors.favoriteSport && touched.favoriteSport ? "input-error" : ""}
+          disabled={isSaving}
+        />
+        {fieldErrors.favoriteSport && touched.favoriteSport && (
+          <span className="error-msg">{fieldErrors.favoriteSport}</span>
         )}
       </div>
 

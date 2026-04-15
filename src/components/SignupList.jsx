@@ -79,6 +79,12 @@ export default function SignupList({ signups, onDelete, isLoading }) {
                 <span className="entry-name">{item.name}</span>
                 <span className="entry-email">{item.email}</span>
                 <span className="entry-phone">{item.phone}</span>
+                {item.sportsTeam && (
+                  <span className="entry-email">⚽ {item.sportsTeam}</span>
+                )}
+                {item.favoriteSport && (
+                  <span className="entry-email">🏅 {item.favoriteSport}</span>
+                )}
               </div>
               <div className="entry-meta">
                 <span className="entry-category">{item.category}</span>

@@ -175,7 +175,8 @@ describe("POST /api/signups", () => {
     name: "Grace Hopper",
     email: "grace@navy.mil",
     phone: "2025550199",
-    category: "NFL Teams",
+    category: "Colors",
+    favoriteColor: "Navy Blue",
   };
 
   test("201 — creates and returns new signup", async () => {
@@ -188,10 +189,29 @@ describe("POST /api/signups", () => {
       name: "Grace Hopper",
       email: "grace@navy.mil",
       phone: "2025550199",
-      category: "NFL Teams",
+      category: "Colors",
+      favoriteColor: "Navy Blue",
     });
     expect(res.body.id).toBeDefined();
     expect(res.body.createdAt).toBeDefined();
+  });
+
+  test("400 — rejects invalid category", async () => {
+    const res = await request(app)
+      .post("/api/signups")
+      .send({ name: "Test", email: "t@t.com", phone: "1234567890", category: "NFL Teams" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  test("400 — rejects when follow-up field is missing for category", async () => {
+    const res = await request(app)
+      .post("/api/signups")
+      .send({ name: "Test", email: "t@t.com", phone: "1234567890", category: "Colors" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
   });
 
   test("400 — rejects when name is missing", async () => {
@@ -236,7 +256,7 @@ describe("POST /api/signups", () => {
   test("500 — returns error when DynamoDB put fails", async () => {
     mockSend.mockRejectedValueOnce(new Error("Write failed"));
 
-    const res = await request(app).post("/api/signups").send(validBody);
+    const res = await request(app).post("/api/signups").send(validBody); // validBody has all required fields incl. favoriteColor
 
     expect(res.status).toBe(500);
     expect(res.body).toHaveProperty("error");

@@ -11,8 +11,7 @@ services:
       - signup-net
 
   dynamo-admin:
-    image: aaronshaf/dynamodb-admin:latest
-    platform: linux/amd64
+    image: node:20-alpine
     container_name: signup_dynamo_admin
     ports:
       - "8001:8001"
@@ -21,6 +20,7 @@ services:
       AWS_REGION: us-east-1
       AWS_ACCESS_KEY_ID: local
       AWS_SECRET_ACCESS_KEY: local
+    command: sh -c "npm install -g dynamodb-admin --quiet && dynamodb-admin"
     depends_on:
       - dynamo
     networks:

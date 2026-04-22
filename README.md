@@ -80,6 +80,8 @@ Then go back to the project root:
 cd ..
 ```
 
+> **This step is required to run tests locally.** Docker handles dependencies inside its containers, so you must install them separately on your machine for `npm test` to work.
+
 ---
 
 ## Step 4 — Install Frontend Dependencies
@@ -116,6 +118,8 @@ This will spin up 4 containers:
 | `signup_ui` | React frontend served by nginx |
 
 > **First run will take a few minutes** — Docker needs to download the base images.
+>
+> The `signup_dynamo_admin` container installs its package on first start, so `http://localhost:8001` may take an extra 15–30 seconds to become available after the other containers are ready.
 
 ---
 
@@ -140,7 +144,10 @@ Open your browser and go to:
 |---|---|
 | The App | http://localhost:5173 |
 | DynamoDB Admin | http://localhost:8001 |
+| API health check | http://localhost:3001/health |
 | API (raw) | http://localhost:3001/api/signups |
+
+> **Note:** Visiting `http://localhost:3001` directly shows "Cannot GET /" — this is expected. The backend has no root page; use `/health` or `/api/signups` to test it directly.
 
 ---
 
@@ -153,7 +160,7 @@ cd backend
 npm test
 ```
 
-You should see all 19 tests pass:
+You should see all 21 tests pass:
 
 ```
 PASS  server.test.js
@@ -175,6 +182,8 @@ PASS  server.test.js
 
   POST /api/signups
     ✓ 201 — creates and returns new signup
+    ✓ 400 — rejects invalid category
+    ✓ 400 — rejects when follow-up field is missing for category
     ✓ 400 — rejects when name is missing
     ✓ 400 — rejects when email is missing
     ✓ 400 — rejects when phone is missing
@@ -189,7 +198,7 @@ PASS  server.test.js
   GET /health
     ✓ 200 — returns ok status
 
-Tests: 19 passed, 19 total
+Tests: 21 passed, 21 total
 ```
 
 ---
@@ -227,6 +236,9 @@ docker-compose logs -f backend
 
 # View logs from just the UI
 docker-compose logs -f ui
+
+# View logs from the database admin panel
+docker-compose logs -f dynamo-admin
 ```
 
 ---
@@ -234,8 +246,18 @@ docker-compose logs -f ui
 ## How the App Works
 
 **Filling out the form:**
-- All 6 fields are required — the Submit button stays disabled until every field is valid
-- Errors appear in red in real time as you type
+- Fill in your name, email, and phone number, then select a category
+- Each category shows different follow-up questions:
+
+| Category | Follow-up questions |
+|---|---|
+| Sports Teams | Favorite Sport, Favorite Sports Team |
+| Colors | Favorite Color |
+| Pizza Toppings | Favorite Pizza Topping |
+| Video Games | Favorite Video Game Genre, Favorite Video Game |
+
+- All fields are required — the Submit button stays disabled until every visible field is valid
+- Errors appear in red in real time as you type (after you leave a field)
 - Submitting triggers a 5-second save (intentional delay to show the loading state)
 - The form only clears after a successful save
 
@@ -245,3 +267,4 @@ docker-compose logs -f ui
 
 **Viewing the database:**
 - Go to http://localhost:8001 to browse the Signups table and see all records
+- The database is in-memory — data resets every time you run `docker-compose down`

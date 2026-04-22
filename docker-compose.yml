@@ -12,6 +12,7 @@ services:
 
   dynamo-admin:
     image: aaronshaf/dynamodb-admin:latest
+    platform: linux/amd64
     container_name: signup_dynamo_admin
     ports:
       - "8001:8001"

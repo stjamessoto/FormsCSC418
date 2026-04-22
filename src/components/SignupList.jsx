@@ -3,6 +3,19 @@ import { useState, useEffect } from "react";
 import { fetchSignupsByCategory } from "../api/api";
 import { CATEGORIES } from "./SignupForm";
 
+const CATEGORY_DISPLAY = {
+  "Sports Teams": [
+    { key: "favoriteSport", label: "Sport" },
+    { key: "sportsTeam", label: "Team" },
+  ],
+  "Colors": [{ key: "favoriteColor", label: "Color" }],
+  "Pizza Toppings": [{ key: "favoritePizzaTopping", label: "Topping" }],
+  "Video Games": [
+    { key: "favoriteVideoGameGenre", label: "Genre" },
+    { key: "favoriteVideoGame", label: "Game" },
+  ],
+};
+
 export default function SignupList({ signups, onDelete, isLoading }) {
   // Requirement #5: filter by category
   const [filterCategory, setFilterCategory] = useState("All");
@@ -79,11 +92,10 @@ export default function SignupList({ signups, onDelete, isLoading }) {
                 <span className="entry-name">{item.name}</span>
                 <span className="entry-email">{item.email}</span>
                 <span className="entry-phone">{item.phone}</span>
-                {item.sportsTeam && (
-                  <span className="entry-email">⚽ {item.sportsTeam}</span>
-                )}
-                {item.favoriteSport && (
-                  <span className="entry-email">🏅 {item.favoriteSport}</span>
+                {(CATEGORY_DISPLAY[item.category] || []).map(({ key, label }) =>
+                  item[key] ? (
+                    <span key={key} className="entry-email">{label}: {item[key]}</span>
+                  ) : null
                 )}
               </div>
               <div className="entry-meta">

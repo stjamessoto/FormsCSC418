@@ -83,6 +83,14 @@ async function createTableIfNotExists() {
   }
 }
 
+// ── Category config ───────────────────────────────────────────────────────────
+const CATEGORY_FOLLOWUP = {
+  "Sports Teams": ["favoriteSport", "sportsTeam"],
+  "Colors": ["favoriteColor"],
+  "Pizza Toppings": ["favoritePizzaTopping"],
+  "Video Games": ["favoriteVideoGameGenre", "favoriteVideoGame"],
+};
+
 // ── Routes ────────────────────────────────────────────────────────────────────
 
 // Health check
@@ -138,9 +146,19 @@ app.get("/api/signups/:id", async (req, res) => {
 
 // POST /api/signups — create signup with 5-sec delay (requirement #4)
 app.post("/api/signups", async (req, res) => {
-  const { name, email, phone, category, sportsTeam, favoriteSport } = req.body;
+  const { name, email, phone, category } = req.body;
 
-  if (!name || !email || !phone || !category || !sportsTeam || !favoriteSport) {
+  if (!name || !email || !phone || !category) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  const followupKeys = CATEGORY_FOLLOWUP[category];
+  if (!followupKeys) {
+    return res.status(400).json({ error: "Invalid category" });
+  }
+
+  const missingFollowup = followupKeys.filter((key) => !req.body[key]);
+  if (missingFollowup.length > 0) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
@@ -157,10 +175,9 @@ app.post("/api/signups", async (req, res) => {
     email,
     phone,
     category,
-    sportsTeam,
-    favoriteSport,
     createdAt: new Date().toISOString(),
   };
+  followupKeys.forEach((key) => { item[key] = req.body[key]; });
 
   try {
     await client.send(new PutCommand({ TableName: TABLE_NAME, Item: item }));

@@ -1,13 +1,38 @@
 // src/components/SignupForm.jsx
 import { useState } from "react";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 export const CATEGORIES = [
+  "Sports Teams",
   "Colors",
-  "NFL Teams",
-  "College Teams",
   "Pizza Toppings",
-  "Video Game Genres",
+  "Video Games",
+];
+
+// Follow-up fields rendered for each category
+const CATEGORY_FIELDS = {
+  "Sports Teams": [
+    { name: "favoriteSport", label: "Favorite Sport", placeholder: "e.g. Basketball" },
+    { name: "sportsTeam", label: "Favorite Sports Team", placeholder: "e.g. Atlanta Braves" },
+  ],
+  "Colors": [
+    { name: "favoriteColor", label: "Favorite Color", placeholder: "e.g. Blue" },
+  ],
+  "Pizza Toppings": [
+    { name: "favoritePizzaTopping", label: "Favorite Pizza Topping", placeholder: "e.g. Pepperoni" },
+  ],
+  "Video Games": [
+    { name: "favoriteVideoGameGenre", label: "Favorite Video Game Genre", placeholder: "e.g. RPG" },
+    { name: "favoriteVideoGame", label: "Favorite Video Game", placeholder: "e.g. The Legend of Zelda" },
+  ],
+};
+
+const ALL_FOLLOWUP = [
+  "favoriteSport",
+  "sportsTeam",
+  "favoriteColor",
+  "favoritePizzaTopping",
+  "favoriteVideoGameGenre",
+  "favoriteVideoGame",
 ];
 
 const INITIAL_FIELDS = {
@@ -15,20 +40,16 @@ const INITIAL_FIELDS = {
   email: "",
   phone: "",
   category: "",
-  sportsTeam: "",
   favoriteSport: "",
+  sportsTeam: "",
+  favoriteColor: "",
+  favoritePizzaTopping: "",
+  favoriteVideoGameGenre: "",
+  favoriteVideoGame: "",
 };
 
-const INITIAL_ERRORS = {
-  name: "",
-  email: "",
-  phone: "",
-  category: "",
-  sportsTeam: "",
-  favoriteSport: "",
-};
+const INITIAL_ERRORS = { ...INITIAL_FIELDS };
 
-// Save status enum (requirement #4)
 export const SAVE_STATUS = {
   READY: "READY",
   SAVING: "SAVING",
@@ -36,7 +57,6 @@ export const SAVE_STATUS = {
   ERROR: "ERROR",
 };
 
-// ── Field-level validators ────────────────────────────────────────────────────
 function validateField(name, value) {
   switch (name) {
     case "name":
@@ -55,45 +75,50 @@ function validateField(name, value) {
     case "category":
       if (!value) return "Please select a category";
       return "";
-    case "sportsTeam":
-      if (!value.trim()) return "Favorite sports team is required";
-      if (value.trim().length < 2) return "Please enter a valid team name";
-      return "";
-    case "favoriteSport":
-      if (!value.trim()) return "Favorite sport is required";
-      if (value.trim().length < 2) return "Please enter a valid sport";
-      return "";
     default:
+      if (!value.trim()) return "This field is required";
+      if (value.trim().length < 2) return "Please enter a valid answer";
       return "";
   }
 }
 
-// ── Form-level validation (requirement #3) ────────────────────────────────────
+function getRequiredKeys(category) {
+  const followups = (CATEGORY_FIELDS[category] || []).map((f) => f.name);
+  return ["name", "email", "phone", "category", ...followups];
+}
+
 function validate(fields) {
-  return (
-    Object.entries(fields).every(([key, val]) => validateField(key, val) === "") &&
-    Object.values(fields).every((v) => v !== "")
+  return getRequiredKeys(fields.category).every(
+    (key) => validateField(key, fields[key]) === ""
   );
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
 export default function SignupForm({ onSubmit, saveStatus }) {
-  // Requirement #1: controlled fields state object
   const [fields, setFields] = useState(INITIAL_FIELDS);
-
-  // Requirement #2: fieldErrors state
   const [fieldErrors, setFieldErrors] = useState(INITIAL_ERRORS);
-
-  // Track which fields have been touched (for showing errors early)
   const [touched, setTouched] = useState({});
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  const followupFields = CATEGORY_FIELDS[fields.category] || [];
+
   function handleChange(e) {
     const { name, value } = e.target;
     const updated = { ...fields, [name]: value };
-    setFields(updated);
 
-    // Real-time validation (requirement #2)
+    if (name === "category") {
+      ALL_FOLLOWUP.forEach((f) => { updated[f] = ""; });
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        ALL_FOLLOWUP.forEach((f) => { next[f] = ""; });
+        return next;
+      });
+      setTouched((prev) => {
+        const next = { ...prev };
+        ALL_FOLLOWUP.forEach((f) => { delete next[f]; });
+        return next;
+      });
+    }
+
+    setFields(updated);
     if (touched[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
     }
@@ -107,20 +132,17 @@ export default function SignupForm({ onSubmit, saveStatus }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    // Mark all touched and run full validation
-    const allTouched = Object.keys(fields).reduce(
-      (acc, k) => ({ ...acc, [k]: true }),
-      {}
-    );
-    setTouched(allTouched);
-    const allErrors = Object.keys(fields).reduce(
-      (acc, k) => ({ ...acc, [k]: validateField(k, fields[k]) }),
-      {}
-    );
+    const required = getRequiredKeys(fields.category);
+    setTouched((prev) => required.reduce((acc, k) => ({ ...acc, [k]: true }), prev));
+    const allErrors = { ...fieldErrors };
+    required.forEach((k) => { allErrors[k] = validateField(k, fields[k]); });
     setFieldErrors(allErrors);
 
     if (validate(fields)) {
-      onSubmit(fields, () => {
+      const payload = { name: fields.name, email: fields.email, phone: fields.phone, category: fields.category };
+      followupFields.forEach((f) => { payload[f.name] = fields[f.name]; });
+
+      onSubmit(payload, () => {
         setFields(INITIAL_FIELDS);
         setFieldErrors(INITIAL_ERRORS);
         setTouched({});
@@ -128,7 +150,6 @@ export default function SignupForm({ onSubmit, saveStatus }) {
     }
   }
 
-  // Requirement #3: disable submit until form is valid
   const isFormValid = validate(fields);
   const isSaving = saveStatus === SAVE_STATUS.SAVING;
 
@@ -138,16 +159,11 @@ export default function SignupForm({ onSubmit, saveStatus }) {
       <div className="field-group">
         <label htmlFor="name">Full Name</label>
         <input
-          id="name"
-          name="name"
-          type="text"
-          value={fields.name}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          id="name" name="name" type="text"
+          value={fields.name} onChange={handleChange} onBlur={handleBlur}
           placeholder="Ada Lovelace"
           className={fieldErrors.name && touched.name ? "input-error" : ""}
-          disabled={isSaving}
-          autoComplete="name"
+          disabled={isSaving} autoComplete="name"
         />
         {fieldErrors.name && touched.name && (
           <span className="error-msg">{fieldErrors.name}</span>
@@ -158,16 +174,11 @@ export default function SignupForm({ onSubmit, saveStatus }) {
       <div className="field-group">
         <label htmlFor="email">Email Address</label>
         <input
-          id="email"
-          name="email"
-          type="email"
-          value={fields.email}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          id="email" name="email" type="email"
+          value={fields.email} onChange={handleChange} onBlur={handleBlur}
           placeholder="ada@example.com"
           className={fieldErrors.email && touched.email ? "input-error" : ""}
-          disabled={isSaving}
-          autoComplete="email"
+          disabled={isSaving} autoComplete="email"
         />
         {fieldErrors.email && touched.email && (
           <span className="error-msg">{fieldErrors.email}</span>
@@ -178,16 +189,11 @@ export default function SignupForm({ onSubmit, saveStatus }) {
       <div className="field-group">
         <label htmlFor="phone">Phone Number</label>
         <input
-          id="phone"
-          name="phone"
-          type="tel"
-          value={fields.phone}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          id="phone" name="phone" type="tel"
+          value={fields.phone} onChange={handleChange} onBlur={handleBlur}
           placeholder="4045550100"
           className={fieldErrors.phone && touched.phone ? "input-error" : ""}
-          disabled={isSaving}
-          autoComplete="tel"
+          disabled={isSaving} autoComplete="tel"
         />
         {fieldErrors.phone && touched.phone && (
           <span className="error-msg">{fieldErrors.phone}</span>
@@ -198,19 +204,14 @@ export default function SignupForm({ onSubmit, saveStatus }) {
       <div className="field-group">
         <label htmlFor="category">Category</label>
         <select
-          id="category"
-          name="category"
-          value={fields.category}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          id="category" name="category"
+          value={fields.category} onChange={handleChange} onBlur={handleBlur}
           className={fieldErrors.category && touched.category ? "input-error" : ""}
           disabled={isSaving}
         >
           <option value="">— Select a category —</option>
           {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
+            <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
         {fieldErrors.category && touched.category && (
@@ -218,45 +219,24 @@ export default function SignupForm({ onSubmit, saveStatus }) {
         )}
       </div>
 
-      {/* FAVORITE SPORTS TEAM */}
-      <div className="field-group">
-        <label htmlFor="sportsTeam">Favorite Sports Team</label>
-        <input
-          id="sportsTeam"
-          name="sportsTeam"
-          type="text"
-          value={fields.sportsTeam}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="e.g. Atlanta Braves"
-          className={fieldErrors.sportsTeam && touched.sportsTeam ? "input-error" : ""}
-          disabled={isSaving}
-        />
-        {fieldErrors.sportsTeam && touched.sportsTeam && (
-          <span className="error-msg">{fieldErrors.sportsTeam}</span>
-        )}
-      </div>
+      {/* DYNAMIC FOLLOW-UP FIELDS */}
+      {followupFields.map((field) => (
+        <div key={field.name} className="field-group">
+          <label htmlFor={field.name}>{field.label}</label>
+          <input
+            id={field.name} name={field.name} type="text"
+            value={fields[field.name]} onChange={handleChange} onBlur={handleBlur}
+            placeholder={field.placeholder}
+            className={fieldErrors[field.name] && touched[field.name] ? "input-error" : ""}
+            disabled={isSaving}
+          />
+          {fieldErrors[field.name] && touched[field.name] && (
+            <span className="error-msg">{fieldErrors[field.name]}</span>
+          )}
+        </div>
+      ))}
 
-      {/* FAVORITE SPORT */}
-      <div className="field-group">
-        <label htmlFor="favoriteSport">Favorite Sport</label>
-        <input
-          id="favoriteSport"
-          name="favoriteSport"
-          type="text"
-          value={fields.favoriteSport}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="e.g. Basketball"
-          className={fieldErrors.favoriteSport && touched.favoriteSport ? "input-error" : ""}
-          disabled={isSaving}
-        />
-        {fieldErrors.favoriteSport && touched.favoriteSport && (
-          <span className="error-msg">{fieldErrors.favoriteSport}</span>
-        )}
-      </div>
-
-      {/* SUBMIT — disabled until valid (requirement #3) */}
+      {/* SUBMIT */}
       <button
         type="submit"
         className={`submit-btn ${isSaving ? "saving" : ""}`}
@@ -264,16 +244,12 @@ export default function SignupForm({ onSubmit, saveStatus }) {
         title={!isFormValid ? "Please fill in all fields correctly" : ""}
       >
         {isSaving ? (
-          <>
-            <span className="spinner" aria-hidden="true" />
-            Saving…
-          </>
+          <><span className="spinner" aria-hidden="true" />Saving…</>
         ) : (
           "Sign Up"
         )}
       </button>
 
-      {/* Save status feedback (requirement #4) */}
       {saveStatus === SAVE_STATUS.SUCCESS && (
         <p className="status-msg success">✓ Signed up successfully!</p>
       )}

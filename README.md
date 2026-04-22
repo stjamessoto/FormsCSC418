@@ -20,13 +20,13 @@ Before you start, make sure you have these installed:
 Open your terminal and run:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+git clone https://github.com/stjamessoto/FormsCSC418.git
 ```
 
 Then navigate into the project folder:
 
 ```bash
-cd YOUR_REPO_NAME
+cd FormsCSC418
 ```
 
 ---
@@ -40,7 +40,7 @@ code .
 Your project structure should look like this:
 
 ```
-your-project/
+FormsCSC418/
 ├── backend/
 │   ├── server.js
 │   ├── server.test.js
